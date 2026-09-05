@@ -17,8 +17,8 @@ UPDATE_CHECK_INTERVAL = 1800    # 깃허브 업데이트 확인 주기 (기본 3
 LOOP_TICK = 5                   # 메인 루프 체크 간격
 
 # ===== 깃허브 OTA 설정 (직접 입력) =====
-GITHUB_VERSION_URL = "https://raw.githubusercontent.com/사용자명/저장소명/main/version.txt"
-GITHUB_MAIN_URL = "https://raw.githubusercontent.com/사용자명/저장소명/main/main.py"
+GITHUB_VERSION_URL = "https://raw.githubusercontent.com/mzmzkgu/espOTA/main/version.txt"
+GITHUB_MAIN_URL = "https://raw.githubusercontent.com/mzmzkgu/espOTA/main/main.py"
 LOCAL_VERSION_FILE = "version.txt"
 
 
