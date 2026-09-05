@@ -4,12 +4,12 @@ import urequests
 import machine
 
 # ===== Wi-Fi 설정 (직접 입력) =====
-WIFI_SSID = "여기에_와이파이_이름"
-WIFI_PASSWORD = "여기에_와이파이_비번"
+WIFI_SSID = "U+Net85A4"
+WIFI_PASSWORD = "#1B5D8K7C5"
 
 # ===== 텔레그램 설정 (직접 입력) =====
-TELEGRAM_TOKEN = "여기에_봇_토큰_입력"
-CHAT_ID = "여기에_챗아이디_입력"
+TELEGRAM_TOKEN = "7374884684:AAFOml2hv_OH7i28Wb9YfH7e0sYM8LMyftQ"
+CHAT_ID = "5111593257"
 
 # ===== 주기 설정 (초 단위) =====
 HEARTBEAT_INTERVAL = 300        # 생존 신고 주기 (기본 5분)
