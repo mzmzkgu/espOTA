@@ -1,115 +1,41 @@
-import network
+# main.py
+# OTA로 갱신되는 실제 작업 파일 (GitHub에도 이 내용 그대로 push)
+# 실행 시작하자마자 텔레그램 1회 발송 + 이후 5분마다 반복 발송 (테스트용)
+
 import time
-import urequests
-import machine
-from secrets import WIFI_SSID, WIFI_PASSWORD, TELEGRAM_TOKEN, CHAT_ID
+import wifi
+import ota
+from telegram import send_telegram_message
 
-# ===== 주기 설정 (초 단위) =====
-HEARTBEAT_INTERVAL = 300        # 생존 신고 주기 (기본 5분)
-UPDATE_CHECK_INTERVAL = 1800    # 깃허브 업데이트 확인 주기 (기본 30분)
-LOOP_TICK = 5                   # 메인 루프 체크 간격
-
-# ===== 깃허브 OTA 설정 (직접 입력) =====
-GITHUB_VERSION_URL = "https://raw.githubusercontent.com/mzmzkgu/espOTA/main/version.txt"
-GITHUB_MAIN_URL = "https://raw.githubusercontent.com/mzmzkgu/espOTA/main/main.py"
-LOCAL_VERSION_FILE = "version.txt"
-
-
-def connect_wifi():
-    wlan = network.WLAN(network.STA_IF)
-    wlan.active(True)
-    if not wlan.isconnected():
-        print("Wi-Fi 연결 중...")
-        wlan.connect(WIFI_SSID, WIFI_PASSWORD)
-        timeout = 20
-        while not wlan.isconnected() and timeout > 0:
-            time.sleep(1)
-            timeout -= 1
-    if wlan.isconnected():
-        print("Wi-Fi 연결됨:", wlan.ifconfig())
-    return wlan
-
-
-def send_telegram_message(text):
-    url = "https://api.telegram.org/bot{}/sendMessage".format(TELEGRAM_TOKEN)
-    payload = {"chat_id": CHAT_ID, "text": text}
-    try:
-        res = urequests.post(url, json=payload)
-        res.close()
-        return True
-    except Exception as e:
-        print("메시지 전송 실패:", e)
-        return False
-
-
-def get_local_version():
-    try:
-        with open(LOCAL_VERSION_FILE) as f:
-            return f.read().strip()
-    except Exception:
-        return "0"
-
-
-def check_for_update():
-    print("깃허브 업데이트 확인 중...")
-    try:
-        res = urequests.get(GITHUB_VERSION_URL)
-        remote_version = res.text.strip()
-        res.close()
-    except Exception as e:
-        print("버전 확인 실패:", e)
-        return
-
-    local_version = get_local_version()
-
-    if remote_version == local_version:
-        print("최신 버전입니다. (현재: {})".format(local_version))
-        return
-
-    print("새 버전 발견: {} -> {}".format(local_version, remote_version))
-    try:
-        res = urequests.get(GITHUB_MAIN_URL)
-        new_code = res.text
-        res.close()
-
-        with open("main.py", "w") as f:
-            f.write(new_code)
-        with open(LOCAL_VERSION_FILE, "w") as f:
-            f.write(remote_version)
-
-        send_telegram_message(
-            "업데이트 완료! {} -> {} 재부팅합니다 🔄".format(local_version, remote_version)
-        )
-        time.sleep(2)
-        machine.reset()
-    except Exception as e:
-        print("업데이트 다운로드/적용 실패:", e)
+HEARTBEAT_INTERVAL = 300        # 하트비트 주기 (초) - 테스트용, 5분
+UPDATE_CHECK_INTERVAL = 1800    # 깃허브 업데이트 재확인 주기 (초) - 30분
+LOOP_TICK = 5                   # 메인 루프 체크 간격 (초)
 
 
 def main():
-    wlan = connect_wifi()
-    print("OTA 생존 신고 + 자동 업데이트 확인 시작")
+    wlan = wifi.connect_wifi()  # 이미 연결돼 있으면 바로 통과됨
 
-    check_for_update()  # 부팅 직후 한 번 확인
+    print("main.py 실행 시작")
+    send_telegram_message("🚀 main.py 실행 시작 (다운로드+기동 정상)")
 
     last_heartbeat = time.time()
     last_update_check = time.time()
 
     while True:
         if not wlan.isconnected():
-            wlan = connect_wifi()
+            wlan = wifi.connect_wifi()
 
         now = time.time()
 
         if now - last_heartbeat >= HEARTBEAT_INTERVAL:
-            if send_telegram_message("나 살아있어요! 🟢"):
+            if send_telegram_message("나 살아있어요! 🟢 (테스트 하트비트)"):
                 print("하트비트 전송 완료 ✅")
             else:
                 print("하트비트 전송 실패")
             last_heartbeat = now
 
         if now - last_update_check >= UPDATE_CHECK_INTERVAL:
-            check_for_update()
+            ota.check_update()   # 새 버전 있으면 여기서 알아서 재부팅됨
             last_update_check = now
 
         time.sleep(LOOP_TICK)
