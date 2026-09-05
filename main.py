@@ -60,6 +60,7 @@ def kst_timestamp():
 
 
 _next_candidate = 2       # 다음에 검사할 숫자 (2부터 시작, 재부팅/OTA 갱신되면 다시 2부터)
+_prime_count = 0          # 지금까지 찾은 소수 누적 개수 (재부팅/OTA 갱신되면 다시 0부터)
 _CHECKS_PER_TICK = 300    # user_task() 한 번 호출당 검사할 후보 개수
                           # (너무 크게 잡으면 하트비트/OTA 체크가 밀릴 수 있어서 적당히 제한)
 
@@ -69,12 +70,13 @@ def user_task():
     # 여기 아래에 실제 하고 싶은 작업(매매 로직, 센서 읽기 등) 작성
     # 이 함수 안쪽은 자유롭게 고쳐도 OTA 동작에는 영향 없음
     # ------------------------------------------------------
-    global _next_candidate
+    global _next_candidate, _prime_count
 
     checked = 0
     while checked < _CHECKS_PER_TICK:
         if is_prime(_next_candidate):
-            msg = "(%s) 소수 발견 : %d" % (kst_timestamp(), _next_candidate)
+            _prime_count += 1
+            msg = "(%s) 소수 발견 : %d (%d번째)" % (kst_timestamp(), _next_candidate, _prime_count)
             send_telegram_message(msg)
             print(msg)
             time.sleep(0.3)  # 초반엔 소수가 몰려서 나오니까 텔레그램 flood-control 방지용 살짝 텀
