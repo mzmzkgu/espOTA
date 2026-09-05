@@ -10,7 +10,7 @@ import wifi
 import ota
 from telegram import send_telegram_message
 
-HEARTBEAT_INTERVAL = 300   # 테스트용 하트비트 주기 (초) - 필요 없어지면 지워도 됨
+HEARTBEAT_INTERVAL = 1800   # 테스트용 하트비트 주기 (초) - 필요 없어지면 지워도 됨
 LOOP_TICK = 5              # 메인 루프 체크 간격 (초) - 너무 크면 정각 체크를 놓칠 수 있음
 
 
