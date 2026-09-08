@@ -92,6 +92,7 @@ while True:
             print("하트비트 전송 실패")
         last_heartbeat = now
 
+"""
     # 포트폴리오 1~50 랜덤 간격(1~5분) 순회 체크
     if resting:
         if now >= rest_until:
@@ -109,6 +110,7 @@ while True:
             else:
                 current_portfolio += 1
                 next_portfolio_check = now + random.randint(INTERVAL_MIN, INTERVAL_MAX)
+"""
 
     # 매 정각(N시 00분)마다 딱 한 번 - GitHub 업데이트 확인
     t = time.localtime()
