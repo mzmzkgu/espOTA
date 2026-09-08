@@ -11,10 +11,11 @@ import ota
 import urequests
 from telegram import send_telegram_message
 
-HEARTBEAT_INTERVAL = 300   # 하트비트 주기 (초)
-LOOP_TICK = 5              # 메인 루프 체크 간격 (초)
+HEARTBEAT_INTERVAL = 300     # 하트비트 주기 (초)
+SITE_CHECK_INTERVAL = 600   # 사이트 접속 확인 주기 (초) - 20분
+LOOP_TICK = 5                # 메인 루프 체크 간격 (초)
 
-TARGET_URL = "https://harna0910.tistory.com/m/15"  # 정시마다 접속 확인할 주소 (바꾸고 싶으면 여기만 수정)
+TARGET_URL = "https://harna0910.tistory.com/m/15"  # 접속 확인할 주소 (바꾸고 싶으면 여기만 수정)
 
 
 def sync_time():
@@ -28,7 +29,7 @@ def sync_time():
 
 
 def check_site(url):
-    # 정시마다 지정한 주소에 접속해보고 결과를 텔레그램으로 보고
+    # 지정한 주소에 접속해보고 결과를 텔레그램으로 보고
     try:
         res = urequests.get(url)
         status = res.status_code
@@ -51,6 +52,7 @@ print("main.py 실행 시작")
 send_telegram_message("🚀 main.py 실행 시작 (다운로드+기동 정상)")
 
 last_heartbeat = time.time()
+last_site_check = time.time()
 last_checked_hour = -1   # 이번에 이미 체크한 "시(hour)"를 기억해서 정각마다 딱 한 번만 실행
 # ============================================================
 # ▲▲▲ 필수 헤더 끝 ▲▲▲
@@ -79,13 +81,17 @@ while True:
             print("하트비트 전송 실패")
         last_heartbeat = now
 
-    # 매 정각(N시 00분)마다 딱 한 번: 사이트 접속 확인 + GitHub 업데이트 확인
+    # 20분마다 사이트 접속 확인 (정시 여부와 무관하게 독립적으로 동작)
+    if now - last_site_check >= SITE_CHECK_INTERVAL:
+        check_site(TARGET_URL)
+        last_site_check = now
+
+    # 매 정각(N시 00분)마다 딱 한 번 - GitHub 업데이트 확인
     t = time.localtime()
     current_hour = t[3]
     current_minute = t[4]
     if current_minute == 0 and current_hour != last_checked_hour:
-        print("정각 도달 - 사이트 접속 확인 + OTA 업데이트 확인")
-        check_site(TARGET_URL)
+        print("정각 도달 - OTA 업데이트 확인")
         ota.check_update()   # 새 버전 있으면 여기서 알아서 다운로드+재부팅됨
         last_checked_hour = current_hour
 
