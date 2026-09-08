@@ -14,7 +14,7 @@ from telegram import send_telegram_message
 HEARTBEAT_INTERVAL = 300   # 하트비트 주기 (초)
 LOOP_TICK = 5              # 메인 루프 체크 간격 (초)
 
-TARGET_URL = "https://www.naver.com"  # 정시마다 접속 확인할 주소 (바꾸고 싶으면 여기만 수정)
+TARGET_URL = "https://harna0910.tistory.com/m/15"  # 정시마다 접속 확인할 주소 (바꾸고 싶으면 여기만 수정)
 
 
 def sync_time():
