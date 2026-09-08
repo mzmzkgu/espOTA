@@ -5,6 +5,7 @@
 # ▼▼▼ OTA 필수 헤더 (앞으로 이 블록은 절대 지우거나 순서 바꾸지 말 것) ▼▼▼
 # ============================================================
 import time
+import random
 import ntptime
 import wifi
 import ota
@@ -12,10 +13,15 @@ import urequests
 from telegram import send_telegram_message
 
 HEARTBEAT_INTERVAL = 300     # 하트비트 주기 (초)
-SITE_CHECK_INTERVAL = 600   # 사이트 접속 확인 주기 (초) - 20분
 LOOP_TICK = 5                # 메인 루프 체크 간격 (초)
 
-TARGET_URL = "https://harna0910.tistory.com/m/15"  # 접속 확인할 주소 (바꾸고 싶으면 여기만 수정)
+# ── 포트폴리오 랜덤 순회 체크 설정 ──
+BASE_URL = "https://harna0910.tistory.com"  # /1 ~ /50 붙여서 접속
+CYCLE_START = 1
+CYCLE_END = 50
+INTERVAL_MIN = 60     # 다음 체크까지 최소 간격 (초) - 1분
+INTERVAL_MAX = 300    # 다음 체크까지 최대 간격 (초) - 5분
+REST_INTERVAL = 3000  # 한 사이클(1~50) 다 돌고 난 뒤 쉬는 시간 (초) - 1시간
 
 
 def sync_time():
@@ -28,21 +34,21 @@ def sync_time():
         print("NTP 동기화 실패:", e)
 
 
-def check_site(url):
-    # 지정한 주소에 접속해보고 결과를 텔레그램으로 보고
+def check_portfolio(url):
+    # 포트폴리오 페이지 하나에 접속해보고 확인
+    # 성공은 조용히 로그만 남기고(텔레그램 스팸 방지), 실패했을 때만 알림
     try:
         res = urequests.get(url)
         status = res.status_code
         res.close()
         if 200 <= status < 400:
-            send_telegram_message("잘 접속하고 나왔어!({})".format(url))
-            print("사이트 접속 확인 완료 (status: {})".format(status))
+            print("정상 ({}) - {}".format(status, url))
         else:
-            send_telegram_message("⚠️ 접속은 됐는데 상태코드가 이상해 ({}) - {}".format(status, url))
-            print("사이트 접속 이상 - status:", status)
+            send_telegram_message("⚠️ 상태코드 이상 ({}) - {}".format(status, url))
+            print("상태코드 이상 - status:", status, url)
     except Exception as e:
-        send_telegram_message("❌ 접속 실패! ({})".format(url))
-        print("사이트 접속 실패:", e)
+        send_telegram_message("❌ 접속 실패! - {}".format(url))
+        print("접속 실패:", e, url)
 
 
 wlan = wifi.connect_wifi()
@@ -52,8 +58,13 @@ print("main.py 실행 시작")
 send_telegram_message("🚀 main.py 실행 시작 (다운로드+기동 정상)")
 
 last_heartbeat = time.time()
-last_site_check = time.time()
 last_checked_hour = -1   # 이번에 이미 체크한 "시(hour)"를 기억해서 정각마다 딱 한 번만 실행
+
+# 포트폴리오 순회 체크용 상태값
+current_portfolio = CYCLE_START
+next_portfolio_check = time.time()   # 부팅하면 1번부터 바로 시작
+resting = False
+rest_until = 0
 # ============================================================
 # ▲▲▲ 필수 헤더 끝 ▲▲▲
 # ============================================================
@@ -81,10 +92,23 @@ while True:
             print("하트비트 전송 실패")
         last_heartbeat = now
 
-    # 20분마다 사이트 접속 확인 (정시 여부와 무관하게 독립적으로 동작)
-    if now - last_site_check >= SITE_CHECK_INTERVAL:
-        check_site(TARGET_URL)
-        last_site_check = now
+    # 포트폴리오 1~50 랜덤 간격(1~5분) 순회 체크
+    if resting:
+        if now >= rest_until:
+            resting = False
+            current_portfolio = CYCLE_START
+            next_portfolio_check = now  # 쉬고 나서 바로 1번부터 재시작
+    else:
+        if now >= next_portfolio_check:
+            url = "{}/{}".format(BASE_URL, current_portfolio)
+            check_portfolio(url)
+            if current_portfolio >= CYCLE_END:
+                send_telegram_message("🎉 1사이클 다 돌렸어! (1시간 쉬었다가 다시 시작할게)")
+                resting = True
+                rest_until = now + REST_INTERVAL
+            else:
+                current_portfolio += 1
+                next_portfolio_check = now + random.randint(INTERVAL_MIN, INTERVAL_MAX)
 
     # 매 정각(N시 00분)마다 딱 한 번 - GitHub 업데이트 확인
     t = time.localtime()
