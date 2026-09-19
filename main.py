@@ -14,6 +14,7 @@ from telegram import send_telegram_message
 
 HEARTBEAT_INTERVAL = 300     # 하트비트 주기 (초)
 LOOP_TICK = 5                # 메인 루프 체크 간격 (초)
+OTA_CHECK_INTERVAL = 600     # OTA 업데이트 감지 주기 (초) - 10분
 
 # ── 포트폴리오 랜덤 순회 체크 설정 ──
 BASE_URL = "https://harna0910.tistory.com"  # /1 ~ /50 붙여서 접속
@@ -58,7 +59,7 @@ print("main.py 실행 시작")
 send_telegram_message("🚀 main.py 실행 시작 (다운로드+기동 정상)")
 
 last_heartbeat = time.time()
-last_checked_hour = -1   # 이번에 이미 체크한 "시(hour)"를 기억해서 정각마다 딱 한 번만 실행
+last_ota_check = time.time()   # 마지막으로 OTA 업데이트를 확인한 시각
 
 # 포트폴리오 순회 체크용 상태값
 current_portfolio = CYCLE_START
@@ -112,14 +113,11 @@ while True:
                 next_portfolio_check = now + random.randint(INTERVAL_MIN, INTERVAL_MAX)
 """
 
-    # 매 정각(N시 00분)마다 딱 한 번 - GitHub 업데이트 확인
-    t = time.localtime()
-    current_hour = t[3]
-    current_minute = t[4]
-    if current_minute == 0 and current_hour != last_checked_hour:
-        print("정각 도달 - OTA 업데이트 확인")
+    # 10분마다 GitHub 업데이트 확인
+    if now - last_ota_check >= OTA_CHECK_INTERVAL:
+        print("OTA 업데이트 확인 (10분 주기)")
         ota.check_update()   # 새 버전 있으면 여기서 알아서 다운로드+재부팅됨
-        last_checked_hour = current_hour
+        last_ota_check = now
 
     user_task()
     time.sleep(LOOP_TICK)
