@@ -17,7 +17,7 @@ LOOP_TICK = 5                # 메인 루프 체크 간격 (초)
 OTA_CHECK_INTERVAL = 600     # OTA 업데이트 감지 주기 (초) - 10분
 
 # ── 포트폴리오 랜덤 순회 체크 설정 ──
-BASE_URL = "https://harna0910.tistory.com"  # /1 ~ /50 붙여서 접속
+BASE_URL = "https://harna0910.tistory.com/m"  # /1 ~ /50 붙여서 접속
 CYCLE_START = 1
 CYCLE_END = 50
 INTERVAL_MIN = 60     # 다음 체크까지 최소 간격 (초) - 1분
